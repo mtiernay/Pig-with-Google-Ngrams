@@ -2,7 +2,7 @@
 -- Note that there are two places below where you must place the word you want to study 
 
 -- If you want to do this as an interactive session, SSH into amazon
---ssh -i '/Users/michaeltiernay-macbook/pig-0.11.1/code/aws_tutorial.pem' hadoop@ec2-54-226-84-46.compute-1.amazonaws.com
+--ssh -i '/key_location.pem' hadoop@ec2...rest of key
 
 
 -- Load in the necessary SequenceFileLoader UDF for the compressed data
