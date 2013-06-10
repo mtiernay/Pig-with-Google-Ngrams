@@ -1,8 +1,12 @@
 -- This program counts the 4 words before and after any word used in Google's Ngrams
 -- Note that there are two places below where you must place the word you want to study 
 
+
+
 -- If you want to do this as an interactive session, SSH into amazon
 --ssh -i '/key_location.pem' hadoop@ec2...rest of key
+
+
 
 
 -- Load in the necessary SequenceFileLoader UDF for the compressed data
@@ -12,17 +16,18 @@ DEFINE SequenceFileLoader org.apache.pig.piggybank.storage.SequenceFileLoader();
 
 
 -- Load Data
-data = LOAD '$INPUT' USING SequenceFileLoader AS (noidea:int, ngram:chararray);
+--data = LOAD '$INPUT' USING SequenceFileLoader AS (noidea:int, ngram:chararray);
 -- If you are using an interactive session
---data = LOAD 's3://datasets.elasticmapreduce/ngrams/books/20090715/eng-us-all/5gram/data' USING SequenceFileLoader AS (noidea:int, ngram:chararray);
+data = LOAD 's3://datasets.elasticmapreduce/ngrams/books/20090715/eng-us-all/5gram/data' USING SequenceFileLoader AS (noidea:int, ngram:chararray);
 
+-- Tell pig to create a tuple with the first element as a character array and the second and third elements as integers
+data1 = foreach data generate FLATTEN((tuple(CHARARRAY,INT,INT)) STRSPLIT(ngram, '\t'));
 
-data1 = foreach data generate FLATTEN(STRSPLIT(ngram, '\t'));
-
+-- Split apart the Ngram into 5 separate elements
 data2 = foreach data1 generate FLATTEN(STRSPLIT($0, ' ')) AS (f1:chararray, f2:chararray, f3:chararray, f4:chararray, f5:chararray) , $1 AS year:int, $2 AS count:int;
 
+-- Make all elements of the ngram lowercase
 data2a = foreach data2 generate LOWER(f1) AS f1, LOWER(f2) AS f2, LOWER(f3) AS f3, LOWER(f4) AS f4, LOWER(f5) AS f5, year, count;
-
 
 
 
@@ -31,7 +36,7 @@ data2a = foreach data2 generate LOWER(f1) AS f1, LOWER(f2) AS f2, LOWER(f3) AS f
 
 ---------------------------------------------------------------------------------------------------------------
 -- Put the word of interest in the ' ' - this gives 4 words before
-data3 = filter data2a by f5 matches '';
+data3 = filter data2a by f5 matches 'gay';
 
 --  Count all the words after our word of interest
 grouped = GROUP data3 BY (f2, year);
@@ -52,14 +57,9 @@ counts5 = FOREACH grouped GENERATE group, SUM(data3.count) AS count5;
 
 
 
-
-
-
-
-
 ---------------------------------------------------------------------------------------------------------------
 -- Put the word of interest in the ' ' - this gives 4 words after
-data4 = filter data2a by f1 matches '';
+data4 = filter data2a by f1 matches 'gay';
 
 --  Count all the words after our word of interest
 grouped = GROUP data4 BY (f2, year);
@@ -136,7 +136,4 @@ final_output = ORDER merge2 BY totals DESC, names, z2;
 store final_output INTO '$OUTPUT';
 -- If using an interactive session
 --store final_output INTO 's3://...';
-
-
-
 
